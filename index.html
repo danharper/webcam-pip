@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<body>
+  <button id="stop">stop</button>
+  <ul id="list"></ul>
+  <video id="vid" />
+</body>
+<script>
+  async function go() {
+    const list = document.getElementById("list");
+    const devices = await window.navigator.mediaDevices.enumerateDevices();
+    devices.forEach((device) => {
+      if (device.kind !== "videoinput") return;
+      const opt = document.createElement("li");
+      opt.innerText = device.label || device.deviceId;
+      opt.addEventListener("click", () => {
+        show(device.deviceId).catch(console.error);
+      });
+      list.appendChild(opt);
+    });
+  }
+
+  go().catch(console.error);
+
+  const vid = document.getElementById("vid");
+
+  async function show(deviceId) {
+    vid.muted = true;
+    vid.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId } },
+    });
+    vid.play();
+
+    vid.onloadedmetadata = () => {
+      vid.requestPictureInPicture();
+    };
+  }
+
+  document.getElementById("stop").addEventListener("click", () => {
+    vid.srcObject.getTracks().forEach((track) => track.stop());
+    document.exitPictureInPicture();
+  });
+</script>
